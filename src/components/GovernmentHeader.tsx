@@ -270,7 +270,7 @@ export default function GovernmentHeader() {
                 return (
                   <Button
                     key={item.key}
-                    label={item.label}
+                    label={t(item.labelKey)}
                     variant="outline-primary"
                     small
                     active={isActive}
