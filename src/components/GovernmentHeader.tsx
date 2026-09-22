@@ -20,18 +20,29 @@ import Button from './Button';
 type NavItem = {
   key: string;
   label: string;
+  labelKey: string;
   href: Href;
+  icon: string;
+  group: 'procurement' | 'updates' | 'info';
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'home', label: 'Home', href: path.home },
-  { key: 'about', label: 'About the Portal', href: path.about },
-  { key: 'centres', label: 'Procurement Centres', href: path.centres },
-  { key: 'booking', label: 'Slot Booking', href: path.booking },
-  { key: 'queue', label: 'Track Token', href: path.queue },
-  { key: 'status', label: 'Status', href: path.status },
-  { key: 'notices', label: 'Notices', href: path.notices },
-  { key: 'help', label: 'Help', href: path.help },
+  { key: 'home', label: 'Home', labelKey: 'nav.home', href: path.home, icon: 'bi-house-door', group: 'info' },
+  { key: 'centres', label: 'Procurement Centres', labelKey: 'nav.centres', href: path.centres, icon: 'bi-geo-alt', group: 'procurement' },
+  { key: 'booking', label: 'Slot Booking', labelKey: 'nav.slotBooking', href: path.booking, icon: 'bi-calendar-check', group: 'procurement' },
+  { key: 'queue', label: 'Track Token', labelKey: 'nav.trackToken', href: path.queue, icon: 'bi-people', group: 'procurement' },
+  { key: 'status', label: 'Status', labelKey: 'nav.status', href: path.status, icon: 'bi-clipboard-check', group: 'procurement' },
+  { key: 'notices', label: 'Notices', labelKey: 'nav.notices', href: path.notices, icon: 'bi-megaphone', group: 'updates' },
+  { key: 'notifications', label: 'Notifications', labelKey: 'nav.notifications', href: path.notifications, icon: 'bi-bell', group: 'updates' },
+  { key: 'about', label: 'About the Portal', labelKey: 'nav.about', href: path.about, icon: 'bi-info-circle', group: 'info' },
+  { key: 'howItWorks', label: 'How It Works', labelKey: 'nav.howItWorks', href: path.howItWorks, icon: 'bi-diagram-3', group: 'info' },
+  { key: 'help', label: 'Help', labelKey: 'nav.help', href: path.help, icon: 'bi-question-circle', group: 'info' },
+];
+
+const MENU_GROUPS: { key: NavItem['group']; titleKey: string }[] = [
+  { key: 'procurement', titleKey: 'menu.procurement' },
+  { key: 'updates', titleKey: 'menu.updates' },
+  { key: 'info', titleKey: 'menu.info' },
 ];
 
 /**
