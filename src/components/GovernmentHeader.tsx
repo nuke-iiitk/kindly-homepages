@@ -751,4 +751,70 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     gap: 6,
   },
+  menuGroup: {
+    gap: 6,
+    marginTop: Spacing.sm,
+  },
+  menuGroupTitle: {
+    color: Colors.textMuted,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceMuted,
+    borderRadius: 2,
+  },
+  menuItemPressed: {
+    backgroundColor: Colors.primaryLight,
+  },
+  menuItemActive: {
+    backgroundColor: Colors.primaryDark,
+    borderColor: Colors.primaryDark,
+  },
+  menuItemText: {
+    flex: 1,
+    minWidth: 0,
+    color: Colors.text,
+    fontWeight: '700',
+  },
+  menuItemTextActive: {
+    color: Colors.white,
+  },
+  menuLangRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  menuLangBtn: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    borderRadius: 2,
+    paddingHorizontal: 6,
+  },
+  menuLangBtnActive: {
+    backgroundColor: Colors.primaryDark,
+    borderColor: Colors.primaryDark,
+  },
+  menuLangText: {
+    color: Colors.text,
+    fontWeight: '800',
+  },
+  menuLangTextActive: {
+    color: Colors.white,
+  },
 });
