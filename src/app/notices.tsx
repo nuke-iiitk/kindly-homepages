@@ -1,0 +1,211 @@
+import { Alert, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+
+import Link from '../components/Link';
+
+import ScreenShell from '../components/ScreenShell';
+import SectionHeading from '../components/SectionHeading';
+import { Colors, Radius, Spacing } from '../constants/theme';
+import { PORTAL_NOTICES } from '../data/notices';
+import { canDownloadPdf, downloadNoticePdf } from '../services/pdfService';
+import { useI18n } from '../i18n';
+import { APP_ICONS, AppIcon } from '../components/AppIcon';
+
+const NOTICES = PORTAL_NOTICES;
+
+
+export default function NoticesScreen() {
+  const { t, fs } = useI18n();
+  const { width } = useWindowDimensions();
+  const wide = width >= 768;
+
+  function handlePdf(notice: (typeof NOTICES)[number]) {
+    if (!canDownloadPdf()) {
+      Alert.alert(t('token.pdfBtn'), t('token.unavailable'));
+      return;
+    }
+    downloadNoticePdf({ title: notice.title, dept: notice.dept, date: notice.date }).then((result) => {
+      if (!result.ok) Alert.alert(t('token.pdfBtn'), t('token.downloadError'));
+    });
+  }
+
+  return (
+    <ScreenShell breadcrumbs={[{ label: t('nav.notices') }]}>
+      <SectionHeading title={t('notice.title')} subtitle={t('common.gov')} />
+
+      {wide ? (
+        <View style={styles.table}>
+          {/* Table header */}
+          <View style={styles.tableHeader}>
+            <Text style={[styles.th, styles.thSubject, { fontSize: fs(12) }]}>{t('notice.subject')}</Text>
+            <Text style={[styles.th, styles.thDate, { fontSize: fs(12) }]}>{t('notice.date')}</Text>
+            <Text style={[styles.th, styles.thPdf, { fontSize: fs(12) }]}>{t('notice.pdf')}</Text>
+          </View>
+
+          {NOTICES.map((notice, idx) => (
+            <View key={idx} style={styles.row}>
+              <View style={styles.subjectCell}>
+                {notice.tag ? (
+                  <View style={styles.newTag}>
+                    <Text style={styles.newTagText}>{notice.tag}</Text>
+                  </View>
+                ) : null}
+                <Text style={[styles.noticeTitle, { fontSize: fs(14) }]}>{notice.title}</Text>
+                <Text style={[styles.noticeDept, { fontSize: fs(11) }]}>{notice.dept}</Text>
+              </View>
+              <Text style={[styles.dateCell, { fontSize: fs(12) }]}>{notice.date}</Text>
+              <Link
+                onPress={() => handlePdf(notice)}
+                accessibilityLabel={`${t('notice.pdf')}: ${notice.title}`}
+                after={<AppIcon name={APP_ICONS.download} size={16} color={Colors.danger} />}
+                label={t('notice.pdf')}
+              />
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={styles.cardList}>
+          {NOTICES.map((notice, idx) => (
+            <View key={idx} style={styles.card}>
+              {notice.tag ? (
+                <View style={styles.cardTag}>
+                  <Text style={styles.newTagText}>{notice.tag}</Text>
+                </View>
+              ) : null}
+              <Text style={[styles.noticeTitle, { fontSize: fs(15) }]}>{notice.title}</Text>
+              <Text style={[styles.noticeDept, { fontSize: fs(11) }]}>{notice.dept}</Text>
+              <View style={styles.cardMeta}>
+                <Text style={[styles.dateCell, { fontSize: fs(12) }]}>{notice.date}</Text>
+                <Link
+                  onPress={() => handlePdf(notice)}
+                  accessibilityLabel={`${t('notice.pdf')}: ${notice.title}`}
+                  after={<AppIcon name={APP_ICONS.download} size={14} color={Colors.danger} />}
+                  label={t('notice.pdf')}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+            <View style={styles.note}>
+        <AppIcon name={APP_ICONS.download} size={14} color={Colors.info} />
+        <Text style={[styles.noteText, { fontSize: fs(12) }]}>
+          PDF documents are generated and downloaded locally in your browser — no server required.
+        </Text>
+      </View>
+    </ScreenShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  table: {
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.borderDark,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: Colors.primaryDark,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  th: {
+    color: Colors.white,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  thSubject: {
+    flex: 1,
+  },
+  thDate: {
+    width: 110,
+  },
+  thPdf: {
+    width: 90,
+    textAlign: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  subjectCell: {
+    flex: 1,
+    paddingRight: Spacing.md,
+  },
+  newTag: {
+    backgroundColor: Colors.saffron,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    marginBottom: 4,
+  },
+  newTagText: {
+    color: Colors.white,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  noticeTitle: {
+    color: Colors.info,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  noticeDept: {
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  dateCell: {
+    width: 110,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  pdfCell: {
+    width: 90,
+    alignItems: 'center',
+    gap: 2,
+  },
+  pdfText: {
+    color: Colors.info,
+    fontWeight: '700',
+  },
+  note: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: Spacing.md,
+  },
+  noteText: {
+    color: Colors.textMuted,
+    flex: 1,
+  },
+  cardList: {
+    gap: Spacing.md,
+  },
+  card: {
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+  },
+  cardTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.saffron,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    marginBottom: 4,
+  },
+  cardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+});

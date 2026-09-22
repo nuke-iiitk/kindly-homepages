@@ -1,0 +1,635 @@
+import { Image } from 'expo-image';
+import type { Href } from 'expo-router';
+import { router, usePathname } from 'expo-router';
+import { useMemo, useState } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+
+import { Colors, Fonts, Spacing } from '../constants/theme';
+import { useI18n, type LanguageCode, type TextSizeLevel } from '../i18n';
+import { path } from '../navigation';
+import BootstrapIcon from './BootstrapIcon';
+import Button from './Button';
+
+type NavItem = {
+  key: string;
+  label: string;
+  href: Href;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { key: 'home', label: 'Home', href: path.home },
+  { key: 'about', label: 'About the Portal', href: path.about },
+  { key: 'centres', label: 'Procurement Centres', href: path.centres },
+  { key: 'booking', label: 'Slot Booking', href: path.booking },
+  { key: 'queue', label: 'Track Token', href: path.queue },
+  { key: 'status', label: 'Status', href: path.status },
+  { key: 'notices', label: 'Notices', href: path.notices },
+  { key: 'help', label: 'Help', href: path.help },
+];
+
+/**
+ * Bilingual portal title — authentic gov-portal style shows the portal name in
+ * two languages (English + Hindi devanagari). The main line is the localized
+ * `common.appName`; the line underneath is always the *other* script so the
+ * header reads like a real Indian government website.
+ */
+const HINDI_APP_NAME = 'राष्ट्रीय किसान क्रय';
+const ENGLISH_APP_NAME = 'National Farmer Procurement';
+
+const LANG_OPTIONS: { code: LanguageCode; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'हिन्दी' },
+  { code: 'ml', label: 'മലയാളം' },
+];
+
+const TEXT_SIZES: { level: TextSizeLevel; label: string }[] = [
+  { level: 'small', label: 'A-' },
+  { level: 'normal', label: 'A' },
+  { level: 'large', label: 'A+' },
+];
+
+export default function GovernmentHeader() {
+  const { t, fs, setLanguage, language, textSize, setTextSize } = useI18n();
+  const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const [search, setSearch] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const compact = width < 768;
+  const phone = width < 600;
+
+  const navigate = (href: Href) => {
+    setMenuOpen(false);
+    router.push(href as never);
+  };
+
+  const activeHref = (href: Href) => {
+    const hrefStr = typeof href === 'string' ? href : String(href);
+    return pathname === hrefStr || pathname.startsWith(hrefStr);
+  };
+
+  const skipToContent = () => {
+    if (typeof document !== 'undefined') {
+      const el = document.getElementById('main-content');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const submitSearch = () => {
+    router.push(path.centres as never);
+  };
+
+  const langLabel = useMemo(
+    () => LANG_OPTIONS.find((l) => l.code === language)?.label ?? 'English',
+    [language]
+  );
+
+  /** Segmented English/हिन्दी/മലയാളം switch. `tight` = slim paddings for the phone nav bar. */
+  const renderLangRow = (tight: boolean) => (
+    <View style={[styles.langRow, tight && styles.langRowTight]}>
+      {LANG_OPTIONS.map((lang) => (
+        <Pressable
+          key={lang.code}
+          onPress={() => setLanguage(lang.code)}
+          style={[styles.langBtn, tight && styles.langBtnTight, language === lang.code && styles.langBtnActive]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: language === lang.code }}
+          accessibilityLabel={lang.label}
+        >
+          <Text
+            style={[
+              styles.langBtnText,
+              { fontSize: fs(11) },
+              language === lang.code && styles.langBtnTextActive,
+            ]}
+          >
+            {lang.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* Utility strip — accessibility controls (desktop/tablet only; on phones
+          this row cramped, overlapped and added pure noise). */}
+      {!compact ? (
+        <View style={styles.utilityBar}>
+          <View style={styles.utilityLeft}>
+            <Pressable onPress={skipToContent} accessibilityRole="link">
+              <Text style={[styles.utilityLink, { fontSize: fs(11) }]}>{t('top.skip')} |</Text>
+            </Pressable>
+            <Text style={[styles.utilityLink, { fontSize: fs(11) }]}>{t('top.screenReader')} |</Text>
+          </View>
+          <View style={styles.utilityRight}>
+            <Text style={[styles.utilityMuted, { fontSize: fs(11) }]}>{t('top.textSize')}:</Text>
+            {TEXT_SIZES.map((option) => (
+              <Pressable
+                key={option.level}
+                onPress={() => setTextSize(option.level)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: textSize === option.level }}
+                style={[styles.sizeBtn, textSize === option.level && styles.sizeBtnActive]}
+              >
+                <Text
+                  style={[
+                    styles.sizeBtnText,
+                    { fontSize: option.level === 'small' ? 9 : option.level === 'large' ? 12 : 10 },
+                    textSize === option.level && styles.sizeBtnTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+            <Text style={[styles.utilityMuted, { fontSize: fs(11) }]}>| {t('top.language')}: {langLabel}</Text>
+          </View>
+        </View>
+      ) : null}
+
+      {/* Government identity strip — one slim line on compact screens */}
+      <View style={[styles.topBar, compact && styles.topBarCompact]}>
+        <Text style={[styles.govText, { fontSize: compact ? fs(11) : fs(13) }]}>
+          भारत सरकार / Government of India
+        </Text>
+        {!compact ? (
+          <Text style={[styles.deptText, { fontSize: fs(11) }]}>{t('common.gov')}</Text>
+        ) : null}
+      </View>
+
+      {/* Brand bar with National Emblem (+ Flag & language switch on desktop) */}
+      <View style={[styles.brandBar, compact && styles.brandBarCompact, phone && styles.brandBarPhone]}>
+        <View style={[styles.brandLeft, compact && styles.brandLeftCompact]}>
+          <Pressable
+            onPress={() => navigate(path.home)}
+            accessibilityRole="link"
+            accessibilityLabel="State Emblem of India — back to home"
+            style={styles.emblemBtn}
+          >
+            <Image
+              source={require('../assets/emblem.svg')}
+              style={[styles.emblem, phone && styles.emblemPhone]}
+              contentFit="contain"
+              accessibilityLabel="State Emblem of India"
+            />
+          </Pressable>
+          {!compact ? <View style={styles.brandDivider} /> : null}
+          <View style={[styles.brandText, compact && styles.brandTextCompact]}>
+            <Text style={[styles.portalName, { fontSize: fs(phone ? 15 : compact ? 16 : 19) }]} numberOfLines={1}>
+              {t('common.appName')}
+            </Text>
+            {!phone ? (
+              <Text style={[styles.portalNameLocal, { fontSize: fs(compact ? 11 : 12) }]} numberOfLines={1}>
+                {language === 'hi' ? ENGLISH_APP_NAME : HINDI_APP_NAME}
+              </Text>
+            ) : null}
+            {!compact ? (
+              <Text style={[styles.portalTagline, { fontSize: fs(11) }]}>{t('common.tagline')}</Text>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Desktop: flag + language switch. Compact: quick search + login. */}
+        {!compact ? (
+          <View style={styles.brandRight}>
+            <Image
+              source={require('../assets/flag.svg')}
+              style={styles.flag}
+              contentFit="contain"
+              accessibilityLabel="Flag of India"
+            />
+            {renderLangRow(false)}
+          </View>
+        ) : (
+          <View style={styles.brandActions}>
+            <Button
+              variant="outline-primary"
+              iconOnly
+              accessibilityLabel={t('header.search')}
+              accessibilityHint={t('header.searchHint')}
+              leading={<BootstrapIcon name="bi-search" size={15} color={Colors.primaryDark} />}
+              onPress={() => navigate(path.centres)}
+            />
+            <Button
+              variant="primary"
+              small
+              label={t('nav.login')}
+              accessibilityHint={t('header.loginHint')}
+              leading={<BootstrapIcon name="bi-box-arrow-in-right" size={12} color={Colors.white} />}
+              onPress={() => navigate(path.login)}
+            />
+          </View>
+        )}
+      </View>
+
+      {/* Navigation row: hamburger (mobile) or links + search + login (desktop) */}
+      <View style={styles.navRow} accessibilityRole="header" accessibilityLabel={t('nav.menu')}>
+        {compact ? (
+          <>
+            <Button
+              variant="outline-secondary"
+              label={menuOpen ? t('common.close') : t('nav.menu')}
+              accessibilityLabel={menuOpen ? t('common.close') : t('nav.menu')}
+              expanded={menuOpen}
+              leading={
+                <BootstrapIcon
+                  name={menuOpen ? 'bi-x-lg' : 'bi-list'}
+                  size={18}
+                  color={Colors.primaryDark}
+                />
+              }
+              onPress={() => setMenuOpen((v) => !v)}
+            />
+            {/* Language switch pinned to the right of the nav bar — fixed row,
+                never wraps or overlaps the hamburger. */}
+            {renderLangRow(true)}
+          </>
+        ) : (
+          <>
+            <View style={styles.navLinks}>
+              {NAV_ITEMS.map((item) => {
+                const isActive = activeHref(item.href);
+                return (
+                  <Button
+                    key={item.key}
+                    label={item.label}
+                    variant="outline-primary"
+                    small
+                    active={isActive}
+                    onPress={() => navigate(item.href)}
+                  />
+                );
+              })}
+            </View>
+
+            <View style={styles.navRight}>
+              <View style={styles.searchBox}>
+                <TextInput
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder={t('header.search')}
+                  placeholderTextColor={Colors.textMuted}
+                  style={[styles.searchInput, { fontSize: fs(12) }]}
+                  onSubmitEditing={submitSearch}
+                  accessibilityLabel={t('header.search')}
+                />
+                                <Button
+                  variant="primary"
+                  small
+                  label={t('header.searchBtn')}
+                  leading={<BootstrapIcon name="bi-search" size={12} color={Colors.white} />}
+                  onPress={submitSearch}
+                />
+              </View>
+              <Button
+                variant="primary"
+                label={t('nav.login')}
+                accessibilityHint={t('header.loginHint')}
+                leading={<BootstrapIcon name="bi-box-arrow-in-right" size={13} color={Colors.white} />}
+                onPress={() => navigate(path.login)}
+              />
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* Mobile drawer — expands inline under the nav row */}
+      {compact && menuOpen ? (
+        <View style={styles.mobileMenu} accessibilityRole="header" accessibilityLabel={t('nav.menu')}>
+          {NAV_ITEMS.map((item) => {
+            const isActive = activeHref(item.href);
+            return (
+              <Button
+                key={item.key}
+                label={item.label}
+                variant="outline-primary"
+                active={isActive}
+                className="w-100"
+                onPress={() => navigate(item.href)}
+              />
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderDark,
+  },
+  utilityBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surfaceAlt,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  utilityLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  utilityRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  utilityLink: {
+    color: Colors.info,
+    fontWeight: '600',
+  },
+  utilityMuted: {
+    color: Colors.textMuted,
+    fontWeight: '600',
+  },
+  sizeBtn: {
+    minWidth: 22,
+    minHeight: 22,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  sizeBtnActive: {
+    backgroundColor: Colors.primaryDark,
+    borderColor: Colors.primaryDark,
+  },
+  sizeBtnText: {
+    color: Colors.text,
+    fontWeight: '800',
+  },
+  sizeBtnTextActive: {
+    color: Colors.white,
+  },
+  topBar: {
+    backgroundColor: Colors.primaryDark,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  govText: {
+    color: Colors.white,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontFamily: Fonts.semiBold,
+  },
+  deptText: {
+    color: Colors.saffronLight,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 1,
+    fontFamily: Fonts.regular,
+  },
+  brandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+  },
+  brandBarCompact: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    gap: Spacing.sm,
+  },
+  brandLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  brandLeftCompact: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+  },
+  emblem: {
+    width: 34,
+    height: 44,
+  },
+  emblemBtn: {
+    padding: 3,
+    borderRadius: 8,
+  },
+  brandDivider: {
+    width: 1,
+    height: 44,
+    backgroundColor: Colors.border,
+  },
+  brandText: {
+    flexDirection: 'column',
+  },
+  portalName: {
+    color: Colors.primaryDark,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    fontFamily: Fonts.extraBold,
+  },
+  portalNameLocal: {
+    color: Colors.primaryDark,
+    fontWeight: '600',
+    letterSpacing: 0,
+    marginTop: 2,
+    fontFamily: Fonts.semiBold,
+  },
+  portalTagline: {
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+  brandRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  flag: {
+    width: 46,
+    height: 31,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  langRow: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceMuted,
+  },
+  langBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRightWidth: 1,
+    borderRightColor: Colors.border,
+  },
+  langBtnActive: {
+    backgroundColor: Colors.primaryDark,
+  },
+  langBtnText: {
+    color: Colors.textSecondary,
+    fontWeight: '700',
+  },
+  langBtnTextActive: {
+    color: Colors.white,
+  },
+  /* Phone variants — slim segmented switch for the mobile nav bar */
+  langRowTight: {
+    flexShrink: 0,
+  },
+  langBtnTight: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  topBarCompact: {
+    paddingVertical: 4,
+  },
+  brandBarPhone: {
+    paddingVertical: 10,
+  },
+  emblemPhone: {
+    width: 28,
+    height: 37,
+  },
+  brandTextCompact: {
+    flex: 1,
+    minWidth: 0,
+  },
+  /* Compact quick actions on the brand row (search + login) */
+  brandActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  headerIconBtn: {
+    minWidth: 34,
+    height: 34,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.white,
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerIconBtnPressed: {
+    backgroundColor: Colors.primaryLight,
+  },
+  loginBtnSm: {
+    height: 34,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: Colors.primaryDark,
+    backgroundColor: Colors.primaryDark,
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginBtnSmPressed: {
+    opacity: 0.85,
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    backgroundColor: Colors.primaryLight,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  navLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  navRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.borderDark,
+    backgroundColor: Colors.white,
+  },
+  searchInput: {
+    minWidth: 150,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    color: Colors.text,
+  },
+  searchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  searchBtnText: {
+    color: Colors.white,
+    fontWeight: '700',
+  },
+  loginBtn: {
+    borderWidth: 1,
+    borderColor: Colors.primaryDark,
+    backgroundColor: Colors.primaryDark,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  loginRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  loginBtnText: {
+    color: Colors.white,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  menuBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.white,
+  },
+  menuBtnText: {
+    color: Colors.primaryDark,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  mobileMenu: {
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderDark,
+    paddingHorizontal: 12,
+    paddingVertical: Spacing.sm,
+    gap: 6,
+  },
+});
