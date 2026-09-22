@@ -44,7 +44,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "dev": "expo start --web --port 8080",
+    "build:dev": "tsc --noEmit"
   },
   "private": true
 }
