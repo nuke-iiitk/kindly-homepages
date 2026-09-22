@@ -12,26 +12,38 @@ import {
 } from 'react-native';
 
 import { Colors, Fonts, Spacing } from '../constants/theme';
-import { useI18n, type LanguageCode, type TextSizeLevel } from '../i18n';
+import { useI18n, type LanguageCode, type TextSizeLevel, type TranslationKey } from '../i18n';
 import { path } from '../navigation';
 import BootstrapIcon from './BootstrapIcon';
+import type { AppIconName } from './iconGlyphs';
 import Button from './Button';
 
 type NavItem = {
   key: string;
   label: string;
+  labelKey: TranslationKey;
   href: Href;
+  icon: AppIconName;
+  group: 'procurement' | 'updates' | 'info';
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'home', label: 'Home', href: path.home },
-  { key: 'about', label: 'About the Portal', href: path.about },
-  { key: 'centres', label: 'Procurement Centres', href: path.centres },
-  { key: 'booking', label: 'Slot Booking', href: path.booking },
-  { key: 'queue', label: 'Track Token', href: path.queue },
-  { key: 'status', label: 'Status', href: path.status },
-  { key: 'notices', label: 'Notices', href: path.notices },
-  { key: 'help', label: 'Help', href: path.help },
+  { key: 'home', label: 'Home', labelKey: 'nav.home', href: path.home, icon: 'bi-house-door', group: 'info' },
+  { key: 'centres', label: 'Procurement Centres', labelKey: 'nav.centres', href: path.centres, icon: 'bi-geo-alt', group: 'procurement' },
+  { key: 'booking', label: 'Slot Booking', labelKey: 'nav.slotBooking', href: path.booking, icon: 'bi-calendar3', group: 'procurement' },
+  { key: 'queue', label: 'Track Token', labelKey: 'nav.trackToken', href: path.queue, icon: 'bi-people', group: 'procurement' },
+  { key: 'status', label: 'Status', labelKey: 'nav.status', href: path.status, icon: 'bi-clipboard', group: 'procurement' },
+  { key: 'notices', label: 'Notices', labelKey: 'nav.notices', href: path.notices, icon: 'bi-megaphone', group: 'updates' },
+  { key: 'notifications', label: 'Notifications', labelKey: 'nav.notifications', href: path.notifications, icon: 'bi-bell', group: 'updates' },
+  { key: 'about', label: 'About the Portal', labelKey: 'nav.about', href: path.about, icon: 'bi-building', group: 'info' },
+  { key: 'howItWorks', label: 'How It Works', labelKey: 'nav.howItWorks', href: path.howItWorks, icon: 'bi-list-ul', group: 'info' },
+  { key: 'help', label: 'Help', labelKey: 'nav.help', href: path.help, icon: 'bi-info-circle', group: 'info' },
+];
+
+const MENU_GROUPS: { key: NavItem['group']; titleKey: TranslationKey }[] = [
+  { key: 'procurement', titleKey: 'menu.procurement' },
+  { key: 'updates', titleKey: 'menu.updates' },
+  { key: 'info', titleKey: 'menu.info' },
 ];
 
 /**
@@ -259,7 +271,7 @@ export default function GovernmentHeader() {
                 return (
                   <Button
                     key={item.key}
-                    label={item.label}
+                    label={t(item.labelKey)}
                     variant="outline-primary"
                     small
                     active={isActive}
@@ -300,22 +312,130 @@ export default function GovernmentHeader() {
         )}
       </View>
 
-      {/* Mobile drawer — expands inline under the nav row */}
+      {/* Mobile drawer — grouped, full-width tap targets with icons so farmers
+          can find notices, language and procurement sections at a glance. */}
       {compact && menuOpen ? (
-        <View style={styles.mobileMenu} accessibilityRole="header" accessibilityLabel={t('nav.menu')}>
-          {NAV_ITEMS.map((item) => {
-            const isActive = activeHref(item.href);
-            return (
-              <Button
-                key={item.key}
-                label={item.label}
-                variant="outline-primary"
-                active={isActive}
-                className="w-100"
-                onPress={() => navigate(item.href)}
-              />
-            );
-          })}
+        <View style={styles.mobileMenu} accessibilityRole="menu" accessibilityLabel={t('nav.menu')}>
+          {/* Language first — many farmers switch before reading anything else */}
+          <Text style={[styles.menuGroupTitle, { fontSize: fs(11) }]}>{t('menu.language')}</Text>
+          <View style={styles.menuLangRow}>
+            {LANG_OPTIONS.map((lang) => (
+              <Pressable
+                key={lang.code}
+                onPress={() => setLanguage(lang.code)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: language === lang.code }}
+                accessibilityLabel={lang.label}
+                style={[styles.menuLangBtn, language === lang.code && styles.menuLangBtnActive]}
+              >
+                <Text
+                  style={[
+                    styles.menuLangText,
+                    { fontSize: fs(13) },
+                    language === lang.code && styles.menuLangTextActive,
+                  ]}
+                >
+                  {lang.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Text size — the desktop utility strip is hidden on phones, so the
+              accessibility control lives here instead of being unreachable. */}
+          <Text style={[styles.menuGroupTitle, { fontSize: fs(11) }]}>{t('menu.textSize')}</Text>
+          <View style={styles.menuLangRow}>
+            {TEXT_SIZES.map((option) => (
+              <Pressable
+                key={option.level}
+                onPress={() => setTextSize(option.level)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: textSize === option.level }}
+                accessibilityLabel={`${t('menu.textSize')} ${option.label}`}
+                style={[styles.menuLangBtn, textSize === option.level && styles.menuLangBtnActive]}
+              >
+                <Text
+                  style={[
+                    styles.menuLangText,
+                    { fontSize: option.level === 'small' ? 12 : option.level === 'large' ? 18 : 15 },
+                    textSize === option.level && styles.menuLangTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {MENU_GROUPS.map((group) => (
+            <View key={group.key} style={styles.menuGroup}>
+              <Text style={[styles.menuGroupTitle, { fontSize: fs(11) }]}>{t(group.titleKey)}</Text>
+              {NAV_ITEMS.filter((item) => item.group === group.key).map((item) => {
+                const isActive = activeHref(item.href);
+                return (
+                  <Pressable
+                    key={item.key}
+                    onPress={() => navigate(item.href)}
+                    accessibilityRole="menuitem"
+                    accessibilityState={{ selected: isActive }}
+                    accessibilityLabel={t(item.labelKey)}
+                    style={({ pressed }) => [
+                      styles.menuItem,
+                      isActive && styles.menuItemActive,
+                      pressed && styles.menuItemPressed,
+                    ]}
+                  >
+                    <BootstrapIcon
+                      name={item.icon}
+                      size={18}
+                      color={isActive ? Colors.white : Colors.primaryDark}
+                    />
+                    <Text
+                      style={[
+                        styles.menuItemText,
+                        { fontSize: fs(15) },
+                        isActive && styles.menuItemTextActive,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {t(item.labelKey)}
+                    </Text>
+                    <BootstrapIcon
+                      name="bi-chevron-right"
+                      size={14}
+                      color={isActive ? Colors.white : Colors.textMuted}
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
+
+          {/* Account actions */}
+          <View style={styles.menuGroup}>
+            <Text style={[styles.menuGroupTitle, { fontSize: fs(11) }]}>{t('menu.account')}</Text>
+            <Button
+              variant="primary"
+              label={t('nav.login')}
+              className="w-100"
+              leading={<BootstrapIcon name="bi-box-arrow-in-right" size={14} color={Colors.white} />}
+              onPress={() => navigate(path.login)}
+            />
+            <Button
+              variant="outline-primary"
+              label={t('nav.register')}
+              className="w-100"
+              leading={<BootstrapIcon name="bi-person-plus" size={14} color={Colors.primaryDark} />}
+              onPress={() => navigate(path.register)}
+            />
+            <Button
+              variant="outline-secondary"
+              label={t('nav.official')}
+              className="w-100"
+              leading={<BootstrapIcon name="bi-shield-check" size={14} color={Colors.primaryDark} />}
+              onPress={() => navigate(path.officialLogin)}
+            />
+          </View>
         </View>
       ) : null}
     </View>
@@ -631,5 +751,71 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: Spacing.sm,
     gap: 6,
+  },
+  menuGroup: {
+    gap: 6,
+    marginTop: Spacing.sm,
+  },
+  menuGroupTitle: {
+    color: Colors.textMuted,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceMuted,
+    borderRadius: 2,
+  },
+  menuItemPressed: {
+    backgroundColor: Colors.primaryLight,
+  },
+  menuItemActive: {
+    backgroundColor: Colors.primaryDark,
+    borderColor: Colors.primaryDark,
+  },
+  menuItemText: {
+    flex: 1,
+    minWidth: 0,
+    color: Colors.text,
+    fontWeight: '700',
+  },
+  menuItemTextActive: {
+    color: Colors.white,
+  },
+  menuLangRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  menuLangBtn: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    borderRadius: 2,
+    paddingHorizontal: 6,
+  },
+  menuLangBtnActive: {
+    backgroundColor: Colors.primaryDark,
+    borderColor: Colors.primaryDark,
+  },
+  menuLangText: {
+    color: Colors.text,
+    fontWeight: '800',
+  },
+  menuLangTextActive: {
+    color: Colors.white,
   },
 });
